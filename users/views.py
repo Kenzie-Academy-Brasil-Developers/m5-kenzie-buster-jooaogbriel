@@ -1,9 +1,9 @@
 from rest_framework.views import APIView, Request, Response, status
-from .serializers import UserSerializer
+from .serializers import UserSerializer, JWTSerializer
 from .models import User
-from django.shortcuts import get_object_or_404
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from users.permissions import IsEmployeeOrReadOnlyOrOwnerAccount
+from rest_framework_simplejwt.views import TokenObtainPairView
+from users.permissions import PermissionsPersonalized
 
 
 
@@ -21,11 +21,14 @@ class UserView(APIView):
 class UserDetailView(APIView):
 
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsEmployeeOrReadOnlyOrOwnerAccount]
+    permission_classes = [PermissionsPersonalized]
     
 
     def get(self, request: Request, user_id: int) -> Response:
-        user = get_object_or_404(User, id=user_id)
+        user = User.objects.get(id=user_id)
+        self.check_object_permissions(request,user)
         serializer = UserSerializer(user)
+        return Response(serializer.data, status.HTTP_200_OK) 
 
-        return Response(serializer.data)
+class UserLogin(TokenObtainPairView):
+    serializer_class = JWTSerializer

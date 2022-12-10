@@ -5,7 +5,7 @@ from .serializers import MovieSerializer, MovieOrderSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from _core.pagination import CustomLimitOffsetPagination
 from .models import Movie
-from users.permissions import IsEmployeeOrReadOnly
+from movies.permissions import IsEmployeeOrReadOnly
 from django.shortcuts import get_object_or_404
 
 
@@ -33,8 +33,6 @@ class MovieView(APIView, CustomLimitOffsetPagination):
         return self.get_paginated_response(serializer.data)
 
 
-
-
 class MovieDetailView(APIView):
 
     authentication_classes = [JWTAuthentication]
@@ -46,7 +44,7 @@ class MovieDetailView(APIView):
 
         serializer = MovieSerializer(movie)
 
-        return Response(serializer.data)
+        return Response(serializer.data, status.HTTP_200_OK)
         
 
     def delete(self, request: Request, movie_id: int) -> Response:
@@ -66,11 +64,8 @@ class MovieOrderDetailView(APIView):
 
 
     def post(self, req: Request,  movie_id: int) -> Response:
-        serializer = MovieOrderSerializer(data=req.data)
-        movie_select = Movie.objects.get(id=movie_id)
-
-        serializer.is_valid(raise_exception=True)
-        
-        serializer.save(user=req.user, movie=movie_select)
-
-        return Response(serializer.data, status.HTTP_201_CREATED)
+        movie = get_object_or_404(Movie, id=movie_id)
+        movie_order= MovieOrderSerializer(data=req.data)
+        movie_order.is_valid(raise_exception=True)
+        movie_order.save(user_order=req.user, movie_order=movie)
+        return Response(movie_order.data, status.HTTP_201_CREATED)
